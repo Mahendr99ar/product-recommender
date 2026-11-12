@@ -3,11 +3,11 @@
 [![CI](https://github.com/Mahendr99ar/product-recommender/actions/workflows/ci.yml/badge.svg)](https://github.com/Mahendr99ar/product-recommender/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.13-blue)
 ![LightGBM](https://img.shields.io/badge/LightGBM-multiclass-green)
-[![Live app](https://img.shields.io/badge/Live%20app-Streamlit-red)](https://product-recommender-mahendra.streamlit.app)
+[![Live app](https://img.shields.io/badge/Live%20app-Streamlit-red)](https://bank-recommender-mahendra.streamlit.app)
 
 Author: [Mahendra Meena](https://github.com/Mahendr99ar)
 
-Live app: https://product-recommender-mahendra.streamlit.app
+Live app: https://bank-recommender-mahendra.streamlit.app
 
 A bank has 24 products (current account, credit card, payroll, pension plan, ...) and close to
 a million customers. Each month only a few percent of them take a new product. The question is
@@ -129,7 +129,7 @@ model's actual reasons.
 ## How to run
 
 **Live app**
-Open https://product-recommender-mahendra.streamlit.app, press **Random customer**, and compare
+Open https://bank-recommender-mahendra.streamlit.app, press **Random customer**, and compare
 the top 7 with what the customer actually added. The hosted app uses synthetic customers only.
 
 **Local demo** (synthetic data, about 20 seconds)
