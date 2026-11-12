@@ -1,0 +1,8 @@
+# Streamlit Community Cloud reads this file (next to the app).
+numpy
+pandas
+pyarrow
+pyyaml
+lightgbm
+plotly
+streamlit

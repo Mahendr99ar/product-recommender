@@ -1,0 +1,50 @@
+# Product recommender configuration. Change values here, not in code.
+
+paths:
+  raw: data/raw               # put train_ver2.csv here (from Kaggle)
+  processed: data/processed
+  reports: reports
+  models: models
+
+data:
+  csv_name: train_ver2.csv
+  chunk_rows: 1000000         # rows read at a time when converting the CSV
+
+# Months are the Kaggle snapshot dates (always the 28th).
+split:
+  valid_month: "2016-05-28"   # last month with known products: used for evaluation
+  # Months whose new products become training rows. Each row uses only earlier months.
+  train_months: ["2015-06-28", "2015-12-28", "2016-01-28", "2016-02-28", "2016-03-28", "2016-04-28"]
+
+features:
+  lags: 5                     # product ownership in each of the last 5 months
+  history_months: 5           # window for counting added / dropped products
+
+model:
+  num_boost_round: 400
+  early_stopping_rounds: 30
+  learning_rate: 0.05
+  num_leaves: 63
+  min_data_in_leaf: 50
+  feature_fraction: 0.8
+  bagging_fraction: 0.8
+  bagging_freq: 1
+  lambda_l2: 1.0
+  seed: 42
+
+evaluation:
+  k: 7                        # MAP@7, the Kaggle metric
+  new_customer_months: 6      # customers with less seniority (antiguedad, months) count as "new"
+
+# Same model and evaluation month, different training months (cli: experiments).
+# Question: is last month or the same month a year ago the better guide?
+experiments:
+  default: ["2015-06-28", "2015-12-28", "2016-01-28", "2016-02-28", "2016-03-28", "2016-04-28"]
+  last_month_only: ["2016-04-28"]
+  same_month_last_year: ["2015-05-28"]
+  last_year_and_last_month: ["2015-05-28", "2016-04-28"]
+  last_6_months: ["2015-11-28", "2015-12-28", "2016-01-28", "2016-02-28", "2016-03-28", "2016-04-28"]
+
+synthetic:
+  customers: 20000
+  seed: 7

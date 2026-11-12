@@ -1,0 +1,21 @@
+product,name,additions,in_top7,recall@7
+ind_cco_fin_ult1,Current account,271,271,1.0
+ind_recibo_ult1,Direct debit,239,239,1.0
+ind_nom_pens_ult1,Pensions,94,87,0.925531914893617
+ind_cno_fin_ult1,Payroll account,88,86,0.9772727272727273
+ind_tjcr_fin_ult1,Credit card,77,77,1.0
+ind_nomina_ult1,Payroll,68,59,0.8676470588235294
+ind_ecue_fin_ult1,e-account,48,37,0.7708333333333334
+ind_valo_fin_ult1,Securities,41,25,0.6097560975609756
+ind_dela_fin_ult1,Long-term deposit,37,25,0.6756756756756757
+ind_fond_fin_ult1,Funds,24,13,0.5416666666666666
+ind_ctma_fin_ult1,Mas particular account,19,3,0.15789473684210525
+ind_ctop_fin_ult1,Particular account,11,0,0.0
+ind_plan_fin_ult1,Pension plan,9,1,0.1111111111111111
+ind_reca_fin_ult1,Taxes,7,2,0.2857142857142857
+ind_hip_fin_ult1,Mortgage,5,0,0.0
+ind_deme_fin_ult1,Medium-term deposit,3,0,0.0
+ind_ctpp_fin_ult1,Particular plus account,3,0,0.0
+ind_pres_fin_ult1,Loan,2,0,0.0
+ind_deco_fin_ult1,Short-term deposit,2,0,0.0
+ind_ctju_fin_ult1,Junior account,1,0,0.0

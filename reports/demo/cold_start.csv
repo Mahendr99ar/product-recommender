@@ -1,0 +1,7 @@
+model,group,customers,map@7
+popularity,new (< 6 months),302,0.9117391989908545
+popularity,established,729,0.4810209680580051
+segment_popularity,new (< 6 months),302,0.9068274992116052
+segment_popularity,established,729,0.4921010516689529
+lightgbm,new (< 6 months),302,0.9109744560075685
+lightgbm,established,729,0.5312724541119602

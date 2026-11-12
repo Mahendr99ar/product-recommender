@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.pytest_cache/
+.ipynb_checkpoints/
+*.egg-info/
+# Kaggle data stays local: download it from Kaggle, do not re-publish it
+data/raw/
+data/processed/real/
+models/real/
+reports/real/predictions*
+# demo data, demo model and reports are committed so the hosted app only reads files
