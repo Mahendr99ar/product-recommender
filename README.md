@@ -3,11 +3,11 @@
 [![CI](https://github.com/Mahendr99ar/product-recommender/actions/workflows/ci.yml/badge.svg)](https://github.com/Mahendr99ar/product-recommender/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.13-blue)
 ![LightGBM](https://img.shields.io/badge/LightGBM-multiclass-green)
-[![Live app](https://img.shields.io/badge/Live%20app-Streamlit-red)](https://bank-recommender-mahendra.streamlit.app)
+[![Live app](https://img.shields.io/badge/Live%20app-Streamlit-red)](https://product-recommender-mahendra.streamlit.app)
 
 Author: [Mahendra Meena](https://github.com/Mahendr99ar)
 
-Live app: https://bank-recommender-mahendra.streamlit.app
+Live app: https://product-recommender-mahendra.streamlit.app
 
 A bank has 24 products (current account, credit card, payroll, pension plan, ...) and close to
 a million customers. Each month only a few percent of them take a new product. The question is
@@ -60,6 +60,7 @@ are missed this way (recall@7 = 0.883).
 | Baselines | Global popularity, and popularity per segment and age band |
 | Evaluation | MAP@7, precision@1, recall@7, Kaggle-style MAP over all customers, recall per product, new vs established customers |
 | Statistics | Paired bootstrap 95 % interval for every MAP difference, so a gain is only claimed when the interval excludes zero |
+| Re-activations | Additions split into products owned 2 to 6 months earlier and first-time products, scored separately |
 | Experiments | Same model, different training months: last month, same month last year, both, last 6 months |
 | Explanations | Per-customer SHAP contributions from LightGBM's built-in TreeSHAP, shown in the app as plain-language reasons |
 | Synthetic data | Generator with the same columns the model uses and planted behaviour, for tests, CI and the hosted app |
@@ -69,18 +70,58 @@ are missed this way (recall@7 = 0.883).
 
 ### Kaggle data
 
-[Run `python -m prodrec.cli all` on the Kaggle data and fill this table from `reports/real/report.md`.]
+13,647,309 rows, 17 monthly snapshots. Trained on the six default months (252,980 training
+rows, 190 features, 145 trees, about 3 minutes on a 2-core machine, 3.3 GB peak memory).
+Evaluated on May 2016, which the model never saw: 29,717 of 931,453 customers (3.19 %)
+added at least one product.
 
-| Model | MAP@7 (customers who added) | Kaggle-style MAP@7 (all customers) | 95 % interval vs popularity |
-|-------|------------------------------|-------------------------------------|-----------------------------|
-| Popularity | | | |
-| Segment popularity | | | |
-| LightGBM | | | |
+| Model | MAP@7 (customers who added) | Precision@1 | Kaggle-style MAP@7 (all customers) |
+|-------|------------------------------|-------------|-------------------------------------|
+| Popularity | 0.634 | 0.417 | 0.0202 |
+| Segment popularity | 0.652 | 0.456 | 0.0208 |
+| **LightGBM** | **0.889** | **0.824** | **0.0284** |
 
-For scale: only about 3.5 % of customers add a product in a given month, so a perfect
-Kaggle-style score is about 0.035, and the
+| Comparison | MAP@7 difference | 95 % bootstrap interval |
+|------------|------------------|-------------------------|
+| LightGBM − popularity | +0.256 | [+0.252, +0.259] |
+| LightGBM − segment popularity | +0.238 | [+0.234, +0.241] |
+
+For scale: a perfect Kaggle-style score in this month is 0.0319 (the share of customers who
+added something), and the
 [2nd-place solution](https://ttvand.github.io/Second-place-in-the-Santander-product-Recommendation-Kaggle-competition)
-reached about 0.031 on the private leaderboard with a much larger pipeline.
+reached about 0.031 on the June 2016 private leaderboard with a much larger pipeline.
+
+**Half of the "new" products are not new.** The most important feature was `nom_pens_drops`,
+the number of times the pensions product was switched off in the last 5 months. That led me
+to check: of the 37,897 products added in May 2016, 19,555 (51.6 %) had been owned by the
+same customer 2 to 6 months earlier. For credit cards it was 70 %, for payroll and direct
+debit 63 %. Products switching off and on again are easy to predict, so I scored the two
+kinds separately:
+
+| Model | Re-activations: top-1 | Re-activations: MRR | First-time products: top-1 | First-time products: MRR |
+|-------|-----------------------|---------------------|----------------------------|--------------------------|
+| Popularity | 40.5 % | 0.621 | 24.5 % | 0.496 |
+| Segment popularity | 44.6 % | 0.649 | 26.3 % | 0.502 |
+| **LightGBM** | **75.6 %** | **0.870** | **52.8 %** | **0.690** |
+
+On products the customer had never owned in the window, LightGBM still puts the right one
+first 52.8 % of the time, against 24.5 % for popularity. So the model is not only learning
+"what was switched off comes back".
+
+**Which training months?** Same model, evaluated on May 2016:
+
+| Training months | Rows | Train time | LightGBM MAP@7 |
+|-----------------|------|------------|----------------|
+| Six default months (incl. June 2015) | 252,980 | 183 s | 0.889 |
+| Last month only (April 2016) | 35,229 | 16 s | 0.895 |
+| Same month last year (May 2015) | 30,417 | 17 s | 0.880 |
+| Same month last year + last month | 65,646 | 30 s | **0.897** |
+| Last six months | 251,532 | 160 s | 0.892 |
+
+One recent month trains 11 times faster than six months and scores as well. The most recent
+month carries the most information about next month; May 2015 alone is the weakest choice.
+The differences between rows are about 0.01 MAP; I have not yet run a paired bootstrap
+between experiments, so I treat the ranking of the top three as unconfirmed.
 
 ### Sanity check on synthetic data
 
@@ -129,7 +170,7 @@ model's actual reasons.
 ## How to run
 
 **Live app**
-Open https://bank-recommender-mahendra.streamlit.app, press **Random customer**, and compare
+Open https://product-recommender-mahendra.streamlit.app, press **Random customer**, and compare
 the top 7 with what the customer actually added. The hosted app uses synthetic customers only.
 
 **Local demo** (synthetic data, about 20 seconds)
@@ -145,16 +186,16 @@ streamlit run app/streamlit_app.py
 
 **Kaggle data**
 1. Sign in to Kaggle, open the competition page, accept the rules on the **Rules** tab.
-2. On the **Data** tab download `train_ver2.csv.zip`, unzip it into `data/raw/`.
+2. On the **Data** tab download `train_ver2.csv.zip` and put it in `data/raw/` (no need to unzip;
+   pandas reads the zip directly), or use `kagglehub.competition_download("santander-product-recommendation")`.
 3. Run:
 ```bash
-python -m prodrec.cli prepare        # CSV -> monthly parquet, several minutes
+python -m prodrec.cli prepare        # CSV -> monthly parquet, about 5 minutes
 python -m prodrec.cli train
 python -m prodrec.cli evaluate       # writes reports/real/report.md
 python -m prodrec.cli experiments    # training-month comparison
 ```
-A run on 300,000 synthetic customers peaked at 1.4 GB of memory; the full data has about
-930,000 customers a month, so plan for 4 GB or more.
+The full run (prepare, train, evaluate) peaked at 3.3 GB of memory.
 
 ## Project structure
 
@@ -199,8 +240,11 @@ product-recommender/
 
 ## Limitations and next steps
 
-- The synthetic data has behaviour I planted, so the demo numbers show that the pipeline works,
-  not how well it would work at a bank.
+- Half of all additions are re-activations, mostly payroll, pensions and direct debit switching
+  off and on with salary payments. A bank would not want to "recommend" those; a production
+  version should rank first-time products separately.
+- The synthetic data in the hosted app has behaviour I planted, so the app shows how the model
+  works, not real customers.
 - June 2016, the month the competition asked for, has no public answers, so offline evaluation
   uses May 2016. The June effect can only be tested by predicting June 2015 from earlier months.
 - Age and sex are model inputs. A real bank would have to check that recommendations do not treat

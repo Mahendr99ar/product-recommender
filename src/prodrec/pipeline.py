@@ -126,14 +126,44 @@ def evaluate(cfg: Config, dataset: str, model=None, train_added=None, train_feat
           for name, r in ranked.items()}
     boot = pd.DataFrame([{"comparison": f"lightgbm - {other}", **bootstrap_diff(ap["lightgbm"], ap[other])}
                          for other in ("popularity", "segment_popularity")]).set_index("comparison")
+    reac = reactivation_table(cfg, store, month, actual, ranked)
     per_prod = per_product_recall(actual, ranked["lightgbm"], k)
     per_prod.insert(1, "name", per_prod["product"].map(PRODUCTS))
     imp = model.importance()
     result = {"month": month, "customers_in_month": n_all, "customers_who_added": len(actual),
-              "table": table, "bootstrap": boot, "cold_start": cold, "per_product": per_prod, "importance": imp}
+              "table": table, "bootstrap": boot, "reactivation": reac, "cold_start": cold, "per_product": per_prod, "importance": imp}
     if write:
         _write_report(cfg, dataset, result, k)
     return result
+
+
+def reactivation_table(cfg: Config, store: MonthStore, month: str, actual: pd.Series,
+                       ranked: dict) -> pd.DataFrame:
+    """Split additions into re-activations (owned 2..H+1 months ago) and first-time
+    products, and score each model on both. Many "new" products in bank data are
+    products switched off and on again; a model can look good by predicting only those."""
+    months = store.months()
+    i = months.index(month)
+    back = [months[i - k] for k in range(2, cfg["features"]["history_months"] + 2) if i - k >= 0]
+    before = np.zeros((len(actual), len(PRODUCT_COLS)), dtype=bool)
+    for m in back:
+        before |= store.products(m).reindex(actual.index).fillna(0).to_numpy().astype(bool)
+    rows = []
+    for name, r in ranked.items():
+        stats = {"re-activation": [], "first time": []}
+        for row, (cust, prods) in enumerate(actual.items()):
+            lst = r[cust]
+            for p in prods:
+                kind = "re-activation" if before[row, P_INDEX[p]] else "first time"
+                pos = lst.index(p) + 1 if p in lst else None
+                stats[kind].append(pos)
+        for kind, pos in stats.items():
+            if pos:
+                rows.append({"model": name, "addition": kind, "count": len(pos),
+                             "top1": float(np.mean([q == 1 for q in pos])),
+                             "mrr": float(np.mean([1 / q if q else 0.0 for q in pos])),
+                             f"recall@{cfg['evaluation']['k']}": float(np.mean([q is not None for q in pos]))})
+    return pd.DataFrame(rows).set_index(["model", "addition"])
 
 
 def _md(df: pd.DataFrame) -> str:
@@ -151,6 +181,7 @@ def _write_report(cfg, dataset, res, k) -> None:
     res["per_product"].to_csv(out / "per_product.csv", index=False)
     res["importance"].to_csv(out / "importance.csv", index=False)
     res["bootstrap"].to_csv(out / "bootstrap.csv")
+    res["reactivation"].to_csv(out / "reactivation.csv")
     lines = [f"# Evaluation ({dataset})", ""]
     if dataset == "demo":
         lines += ["Synthetic data. These numbers check that the code works. They are not findings.", ""]
@@ -162,6 +193,10 @@ def _write_report(cfg, dataset, res, k) -> None:
               "like the competition leaderboard.", "",
               f"## Is the difference real? (paired bootstrap, 95 % interval of the MAP@{k} difference)",
               _md(res["bootstrap"].round(4)), "",
+              "## Re-activations vs first-time products",
+              "A re-activation is a product the customer owned at some point 2 to "
+              f"{cfg['features']['history_months'] + 1} months before. MRR = mean of 1 / rank of the added product.", "",
+              _md(res["reactivation"].round(3)), "",
               "## New vs established customers", _md(res["cold_start"].set_index(["model", "group"]).round(4)), "",
               "## LightGBM recall by product", _md(res["per_product"].round(3).set_index("product")), "",
               "## Top 15 features (gain share)", _md(res["importance"].head(15).set_index("feature").round(4)), ""]

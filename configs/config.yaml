@@ -7,7 +7,7 @@ paths:
   models: models
 
 data:
-  csv_name: train_ver2.csv
+  csv_name: train_ver2.csv.zip   # pandas reads the zip directly; train_ver2.csv also works
   chunk_rows: 1000000         # rows read at a time when converting the CSV
 
 # Months are the Kaggle snapshot dates (always the 28th).

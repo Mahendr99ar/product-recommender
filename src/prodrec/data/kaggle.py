@@ -44,6 +44,11 @@ def clean_chunk(df: pd.DataFrame) -> pd.DataFrame:
 def convert_csv(cfg: Config, csv_path: Path | None = None) -> list[str]:
     csv_path = Path(csv_path) if csv_path else cfg.path("raw") / cfg["data"]["csv_name"]
     if not csv_path.exists():
+        # accept either the zip from Kaggle or the unzipped CSV, whichever is there
+        other = csv_path.with_suffix("") if csv_path.suffix == ".zip" else Path(str(csv_path) + ".zip")
+        if other.exists():
+            csv_path = other
+    if not csv_path.exists():
         raise FileNotFoundError(
             f"{csv_path} not found. Download train_ver2.csv.zip from the Kaggle competition "
             "'santander-product-recommendation' (Data tab), unzip it into data/raw/.")
